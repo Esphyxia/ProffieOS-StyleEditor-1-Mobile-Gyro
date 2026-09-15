@@ -38,9 +38,9 @@
   <link rel="stylesheet" crossorigin href="./assets/index-BVIgaOuI.css">
 </head>
 <body>
-  <!-- Mobile Phantom Mouse Bridge -->
+ <!-- Mobile Direct Engine Bridge -->
 <button id="gyro-permission" style="position:fixed; top:10px; left:10px; z-index:9999; padding:10px; background:#ff0000; color:#fff; border:none; cursor:pointer;">
-  Enable Visual Gyro Swings
+  Enable Engine Gyro
 </button>
 
 <script>
@@ -48,35 +48,30 @@
     if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
       DeviceOrientationEvent.requestPermission().then(state => {
         if (state === 'granted') {
-          startVisualTracking();
+          startNativeTracking();
           this.style.display = 'none';
         }
       }).catch(console.error);
     } else {
-      startVisualTracking();
+      startNativeTracking();
       this.style.display = 'none';
     }
   });
 
-  function startVisualTracking() {
+  function startNativeTracking() {
     window.addEventListener('deviceorientation', (event) => {
-      // Pull the left/right physical tilt of the phone (Portrait Mode)
+      // Pulls physical left/right tilt (gamma) and front/back tilt (beta)
       let tiltX = event.gamma || 0; 
-      
-      // Map the physical tilt to the pixel width of your iPhone screen
-      // A flat phone is center screen. Tilting left/right moves the fake mouse left/right.
-      let screenX = (window.innerWidth / 2) + (tiltX / 90) * (window.innerWidth * 1.5);
-      let screenY = window.innerHeight / 2; 
+      let tiltY = event.beta || 0;
 
-      // Generate a phantom mouse movement
-      let fakeMouse = new MouseEvent('mousemove', {
-        clientX: screenX,
-        clientY: screenY,
-        bubbles: true
-      });
+      // Maps physical degrees (-90 to 90) to the engine's internal math scale (-2.5 to 2.5)
+      let engineX = (tiltX / 90) * 2.5;
+      let engineY = (tiltY / 90) * 1.5;
 
-      // Dispatch it to trick the Style Editor's native visual engine
-      document.dispatchEvent(fakeMouse);
+      // Bypasses the HTML canvas entirely and commands the 3D physics directly
+      if (typeof window.drive_saber_from_xy === 'function') {
+          window.drive_saber_from_xy(engineX, engineY);
+      }
     });
   }
 </script>
