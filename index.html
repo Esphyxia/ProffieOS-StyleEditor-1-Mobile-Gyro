@@ -38,40 +38,45 @@
   <link rel="stylesheet" crossorigin href="./assets/index-BVIgaOuI.css">
 </head>
 <body>
-  <!-- Mobile Gyroscope Bridge (Updated) -->
+  <!-- Mobile Phantom Mouse Bridge -->
 <button id="gyro-permission" style="position:fixed; top:10px; left:10px; z-index:9999; padding:10px; background:#ff0000; color:#fff; border:none; cursor:pointer;">
-  Enable Mobile Gyro Swings
+  Enable Visual Gyro Swings
 </button>
 
 <script>
   document.getElementById('gyro-permission').addEventListener('click', function() {
-    if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
-      DeviceMotionEvent.requestPermission()
-        .then(permissionState => {
-          if (permissionState === 'granted') {
-            startGyroTracking();
-            this.style.display = 'none';
-          }
-        })
-        .catch(console.error);
+    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+      DeviceOrientationEvent.requestPermission().then(state => {
+        if (state === 'granted') {
+          startVisualTracking();
+          this.style.display = 'none';
+        }
+      }).catch(console.error);
     } else {
-      startGyroTracking();
+      startVisualTracking();
       this.style.display = 'none';
     }
   });
 
-  function startGyroTracking() {
-    window.addEventListener('devicemotion', (event) => {
-      // Pull raw degrees per second from the gyroscope
-      let rotX = Math.abs(event.rotationRate.alpha || 0);
-      let rotY = Math.abs(event.rotationRate.beta || 0);
-      let rotZ = Math.abs(event.rotationRate.gamma || 0);
+  function startVisualTracking() {
+    window.addEventListener('deviceorientation', (event) => {
+      // Pull the left/right physical tilt of the phone (Portrait Mode)
+      let tiltX = event.gamma || 0; 
       
-      let totalVelocity = rotX + rotY + rotZ;
+      // Map the physical tilt to the pixel width of your iPhone screen
+      // A flat phone is center screen. Tilting left/right moves the fake mouse left/right.
+      let screenX = (window.innerWidth / 2) + (tiltX / 90) * (window.innerWidth * 1.5);
+      let screenY = window.innerHeight / 2; 
 
-      // Inject directly into the editor's global variable
-      // Multiplier of 35 maps a hard physical phone swing to the Proffie 32768 max value
-      window.swing_speed = Math.min(totalVelocity * 35, 32768);
+      // Generate a phantom mouse movement
+      let fakeMouse = new MouseEvent('mousemove', {
+        clientX: screenX,
+        clientY: screenY,
+        bubbles: true
+      });
+
+      // Dispatch it to trick the Style Editor's native visual engine
+      document.dispatchEvent(fakeMouse);
     });
   }
 </script>
