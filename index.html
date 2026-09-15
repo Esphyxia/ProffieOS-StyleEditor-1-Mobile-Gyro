@@ -38,25 +38,23 @@
   <link rel="stylesheet" crossorigin href="./assets/index-BVIgaOuI.css">
 </head>
 <body>
-  <!-- Mobile Gyroscope Bridge -->
+  <!-- Mobile Gyroscope Bridge (Updated) -->
 <button id="gyro-permission" style="position:fixed; top:10px; left:10px; z-index:9999; padding:10px; background:#ff0000; color:#fff; border:none; cursor:pointer;">
   Enable Mobile Gyro Swings
 </button>
 
 <script>
   document.getElementById('gyro-permission').addEventListener('click', function() {
-    // Modern iOS requires explicit user permission for motion data
-    if (typeof DeviceMotionEvent.requestPermission === 'function') {
+    if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
       DeviceMotionEvent.requestPermission()
         .then(permissionState => {
           if (permissionState === 'granted') {
             startGyroTracking();
-            this.style.display = 'none'; // Hide button after granting
+            this.style.display = 'none';
           }
         })
         .catch(console.error);
     } else {
-      // Android and older devices bypass the prompt
       startGyroTracking();
       this.style.display = 'none';
     }
@@ -64,20 +62,16 @@
 
   function startGyroTracking() {
     window.addEventListener('devicemotion', (event) => {
-      // Extract raw rotation rate (degrees per second)
+      // Pull raw degrees per second from the gyroscope
       let rotX = Math.abs(event.rotationRate.alpha || 0);
       let rotY = Math.abs(event.rotationRate.beta || 0);
       let rotZ = Math.abs(event.rotationRate.gamma || 0);
-
-      // Combine axes for total angular velocity
+      
       let totalVelocity = rotX + rotY + rotZ;
 
-      // Map physical velocity to the Style Editor's virtual SwingSpeed variable
-      // Multiplied by an arbitrary scaling factor to match virtual blade physics
-      if (typeof setSwingSpeed === "function") {
-          let mappedSpeed = Math.min(totalVelocity * 1.5, 32768); 
-          setSwingSpeed(mappedSpeed);
-      }
+      // Inject directly into the editor's global variable
+      // Multiplier of 35 maps a hard physical phone swing to the Proffie 32768 max value
+      window.swing_speed = Math.min(totalVelocity * 35, 32768);
     });
   }
 </script>
